@@ -9,6 +9,7 @@ import (
 
 	texttospeech "cloud.google.com/go/texttospeech/apiv1"
 	arg "github.com/alexflint/go-arg"
+	shellwords "github.com/mattn/go-shellwords"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/api/option"
 	texttospeechpb "google.golang.org/genproto/googleapis/cloud/texttospeech/v1"
@@ -31,6 +32,14 @@ func main() {
 	var args args
 	arg.MustParse(&args)
 
+	playerParsed, err := shellwords.Parse(args.Player)
+
+	if err != nil {
+		logger.WithError(err).Fatalf("invalid player command '%s'", args.Player)
+	}
+
+	playerParsed = append(playerParsed, "-")
+
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		input := scanner.Text()
@@ -41,7 +50,7 @@ func main() {
 			continue
 		}
 
-		command := exec.Command(args.Player, "-")
+		command := exec.Command(playerParsed[0], playerParsed[1:]...)
 
 		stdin, err := command.StdinPipe()
 		if err != nil {
